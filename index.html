@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WASM Forge - C++ to WebAssembly PWA</title>
-    
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="manifest.json">
+
+    <!-- Inline manifest (agar tidak 404) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"WASM Forge","short_name":"WASM Forge","start_url":".","display":"standalone","background_color":"%230d1117","theme_color":"%23161b22","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1126/1126012.png","sizes":"512x512","type":"image/png"}]}'>
     <meta name="theme-color" content="#161b22">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1126/1126012.png">
 
-    <!-- Ace Editor CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
     <style>
         :root {
@@ -23,125 +22,24 @@
             --success: #2ea043;
             --danger: #da3633;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        header {
-            background-color: var(--bg-panel);
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header h1 {
-            font-size: 1.2rem;
-            color: var(--text-main);
-        }
-
-        .toolbar {
-            background-color: var(--bg-main);
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .file-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        #fileNameInput {
-            background: #0d1117; 
-            border: 1px solid #30363d; 
-            color: #c9d1d9; 
-            padding: 7px 10px; 
-            border-radius: 5px; 
-            outline: none;
-            width: 130px;
-        }
-
-        button {
-            background-color: var(--bg-panel);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { background-color: var(--bg-panel); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 1.2rem; color: var(--text-main); }
+        .toolbar { background-color: var(--bg-main); padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+        .file-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        #fileNameInput { background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 7px 10px; border-radius: 5px; outline: none; width: 130px; }
+        button { background-color: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
         button:hover:not(:disabled) { border-color: var(--text-main); }
         button.primary { background-color: var(--accent); color: #ffffff; border: none; }
         button.primary:hover:not(:disabled) { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-
-        .editor-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel-header {
-            background: var(--bg-panel);
-            padding: 6px 15px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border-bottom: 1px solid var(--border);
-            border-top: 1px solid var(--border);
-            color: #8b949e;
-            display: flex;
-            justify-content: space-between;
-        }
-
+        .container { display: flex; flex-direction: column; flex: 1; }
+        .editor-panel { flex: 1; display: flex; flex-direction: column; }
+        .panel-header { background: var(--bg-panel); padding: 6px 15px; font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); color: #8b949e; display: flex; justify-content: space-between; }
         #editor { flex: 1; width: 100%; }
-
-        .terminal-panel {
-            height: 180px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .terminal {
-            flex: 1;
-            background-color: #010409;
-            padding: 12px 15px;
-            overflow-y: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.85rem;
-        }
-
+        .terminal-panel { height: 180px; display: flex; flex-direction: column; }
+        .terminal { flex: 1; background-color: #010409; padding: 12px 15px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
         .log-info { color: #8b949e; }
         .log-success { color: var(--success); }
         .log-error { color: var(--danger); }
@@ -157,7 +55,7 @@
 
     <div class="toolbar">
         <button id="btnCompile" class="primary">⚙️ Build to WASM</button>
-        
+
         <div class="file-group">
             <input type="text" id="fileNameInput" value="hapus_bg_engine" placeholder="Nama file...">
             <span style="font-size: 0.85rem; color: #8b949e;">.wasm</span>
@@ -200,94 +98,840 @@ extern "C" {
     </div>
 
     <script>
-        // 1. Inisialisasi Editor Kode
-        var editor = ace.edit("editor");
-        editor.setTheme("ace/theme/github_dark");
-        editor.session.setMode("ace/mode/c_cpp");
-        editor.setFontSize("14px");
+    /* =========================================================
+       MINI C++ → WASM COMPILER
+       Supports: int/void functions, arithmetic, comparisons,
+       logical ops (short-circuit), if/else, while, for,
+       variable declarations, array indexing, function calls.
+       ========================================================= */
+    (function(global) {
+        'use strict';
 
-        const btnCompile = document.getElementById('btnCompile');
-        const btnDownload = document.getElementById('btnDownload');
-        const fileNameInput = document.getElementById('fileNameInput');
-        const terminal = document.getElementById('terminal');
-
-        let compiledWasmBuffer = null;
-
-        function log(msg, type = 'info') {
-            const div = document.createElement('div');
-            div.className = `log-${type}`;
-            div.textContent = `> ${msg}`;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
+        // ---------- LEB128 / string helpers ----------
+        function lebU(out, n) {
+            n = n >>> 0;
+            do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; out.push(b); } while (n);
         }
-
-        // 2. Registrasi Service Worker PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => log("Service Worker aktif: Fitur Offline Siap!", "success"))
-                    .catch((err) => log(`SW Fail: ${err.message}`, "error"));
-            });
-        }
-
-        // 3. Logika Kompilasi
-        btnCompile.addEventListener('click', async () => {
-            const cppCode = editor.getValue();
-            
-            btnCompile.disabled = true;
-            btnDownload.disabled = true;
-            log("Memproses kompilasi C++ via Engine...", "process");
-
-            try {
-                // Mengirim kode ke compiler API
-                const response = await fetch("https://wasm-compiler-api.workers.dev/compile", {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain" },
-                    body: cppCode
-                });
-
-                if (!response.ok) throw new Error("Gagal mengompilasi kode C++!");
-
-                compiledWasmBuffer = await response.arrayBuffer();
-                log("Kompilasi sukses! Memverifikasi binary .wasm...", "process");
-                
-                await WebAssembly.instantiate(compiledWasmBuffer);
-                log("Binary WASM valid & siap digunakan!", "success");
-                log(`Ukuran File: ${(compiledWasmBuffer.byteLength / 1024).toFixed(2)} KB`, "info");
-
-                btnDownload.disabled = false;
-
-            } catch (err) {
-                log(`Proses lokal fallback...`, "info");
-                setTimeout(() => {
-                    const dummyBytes = new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
-                    compiledWasmBuffer = dummyBytes.buffer;
-                    btnDownload.disabled = false;
-                    log("File WASM siap diunduh.", "success");
-                }, 800);
-            } finally {
-                btnCompile.disabled = false;
+        function lebS(out, n) {
+            n = n | 0;
+            let more = true;
+            while (more) {
+                let b = n & 0x7f; n >>= 7;
+                if ((n === 0 && !(b & 0x40)) || (n === -1 && (b & 0x40))) more = false;
+                else b |= 0x80;
+                out.push(b);
             }
-        });
+        }
+        function encStr(out, s) {
+            const b = new TextEncoder().encode(s);
+            lebU(out, b.length);
+            for (const x of b) out.push(x);
+        }
+        const TYPE_BYTE = { i32: 0x7f, i64: 0x7e, f32: 0x7d, f64: 0x7c, void: 0x40 };
+        const BIN_OP = {
+            '+': 0x6a, '-': 0x6b, '*': 0x6c, '/': 0x6d, '%': 0x70,
+            '&': 0x71, '|': 0x72, '^': 0x73, '<<': 0x74, '>>': 0x76,
+            '==': 0x46, '!=': 0x47, '<': 0x48, '>': 0x4a,
+            '<=': 0x4c, '>=': 0x4e
+        };
 
-        // 4. Logika Download
-        btnDownload.addEventListener('click', () => {
-            if (!compiledWasmBuffer) return;
+        // ---------- Tokenizer ----------
+        function tokenize(src) {
+            const t = [];
+            let i = 0;
+            while (i < src.length) {
+                const c = src[i];
+                if (/\s/.test(c)) { i++; continue; }
+                if (c === '/' && src[i + 1] === '/') { while (i < src.length && src[i] !== '\n') i++; continue; }
+                if (c === '/' && src[i + 1] === '*') { i += 2; while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue; }
+                if (c === '#') { while (i < src.length && src[i] !== '\n') i++; continue; }
+                if (/[a-zA-Z_]/.test(c)) {
+                    let j = i;
+                    while (j < src.length && /[a-zA-Z0-9_]/.test(src[j])) j++;
+                    t.push({ k: 'id', v: src.slice(i, j) });
+                    i = j; continue;
+                }
+                if (/[0-9]/.test(c)) {
+                    let j = i;
+                    if (c === '0' && /[xX]/.test(src[i + 1] || '')) {
+                        j = i + 2;
+                        while (j < src.length && /[0-9a-fA-F]/.test(src[j])) j++;
+                    } else {
+                        while (j < src.length && /[0-9]/.test(src[j])) j++;
+                    }
+                    t.push({ k: 'num', v: src.slice(i, j) });
+                    i = j; continue;
+                }
+                if (c === '"') {
+                    let j = i + 1;
+                    while (j < src.length && src[j] !== '"') { if (src[j] === '\\') j++; j++; }
+                    t.push({ k: 'str', v: src.slice(i + 1, j) });
+                    i = j + 1; continue;
+                }
+                if (c === "'") {
+                    let j = i + 1;
+                    while (j < src.length && src[j] !== "'") { if (src[j] === '\\') j++; j++; }
+                    const ch = src.slice(i + 1, j);
+                    t.push({ k: 'num', v: String(ch.charCodeAt(0) || 0) });
+                    i = j + 1; continue;
+                }
+                const three = src.slice(i, i + 3);
+                if (three === '<<=' || three === '>>=') { t.push({ k: 'op', v: three }); i += 3; continue; }
+                const two = src.slice(i, i + 2);
+                if (['==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '<<', '>>'].includes(two)) {
+                    t.push({ k: 'op', v: two }); i += 2; continue;
+                }
+                t.push({ k: 'op', v: c });
+                i++;
+            }
+            return t;
+        }
 
-            let customName = fileNameInput.value.trim() || "module_engine";
-            const blob = new Blob([compiledWasmBuffer], { type: "application/wasm" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${customName}.wasm`;
-            document.body.appendChild(a);
-            a.click();
-            
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            log(`Berkas berhasil disimpan: ${customName}.wasm`, "success");
+        // ---------- Parser ----------
+        const INT_TYPES = new Set(['int','void','char','unsigned','signed','short','long','size_t','uint8_t','uint16_t','uint32_t','int8_t','int16_t','int32_t','bool','float','double','long long','u8','u16','u32','i8','i16','i32']);
+        const MODIFIERS = new Set(['WASM_EXPORT','static','inline','extern','EXPORT','API','const','volatile','register','virtual','public','private','protected','noexcept','override']);
+
+        function parse(tokens) {
+            let pos = 0;
+            const peek = (o = 0) => tokens[pos + o];
+            const next = () => tokens[pos++];
+            const expect = v => { if (!peek() || peek().v !== v) throw new Error(`Expected '${v}', got '${peek() ? peek().v : 'EOF'}`); return next(); };
+
+            function skipAttr() {
+                while (peek()) {
+                    if (peek().v === '__attribute__') {
+                        next();
+                        let d = 0;
+                        while (pos < tokens.length) {
+                            const t = next();
+                            if (t.v === '(') d++;
+                            else if (t.v === ')') { d--; if (d === 0) break; }
+                        }
+                    } else if (peek().k === 'id' && MODIFIERS.has(peek().v)) {
+                        next();
+                    } else break;
+                }
+            }
+
+            function parseType() {
+                let isPtr = false, base = null;
+                while (peek()) {
+                    if (peek().k === 'id' && INT_TYPES.has(peek().v)) { base = next().v; }
+                    else if (peek().v === 'unsigned' && base === null) { base = next().v; }
+                    else if (peek().v === '*') { isPtr = true; next(); }
+                    else if (peek().v === '&') { isPtr = true; next(); }
+                    else break;
+                }
+                if (!base) return null;
+                if (base === 'void') return isPtr ? 'i32' : 'void';
+                if (base === 'float' || base === 'double') return isPtr ? 'i32' : 'f64';
+                return 'i32';
+            }
+
+            function parseFunc() {
+                const start = pos;
+                skipAttr();
+                const ret = parseType();
+                if (!ret || !peek() || peek().k !== 'id') { pos = start; return null; }
+                const name = next().v;
+                if (!peek() || peek().v !== '(') { pos = start; return null; }
+                next();
+                const params = [];
+                while (peek() && peek().v !== ')') {
+                    if (peek().v === ',') { next(); continue; }
+                    if (peek().v === 'void' && peek(1) && peek(1).v === ')') { next(); break; }
+                    const pt = parseType();
+                    if (!pt) { next(); continue; }
+                    let pname = null;
+                    if (peek() && peek().k === 'id' && !MODIFIERS.has(peek().v)) pname = next().v;
+                    while (peek() && peek().v === '[') { next(); while (peek() && peek().v !== ']') next(); next(); }
+                    params.push({ type: pt, name: pname });
+                }
+                if (peek()) expect(')');
+                while (peek() && peek().v !== '{') next();
+                if (!peek()) { pos = start; return null; }
+                expect('{');
+                const body = parseBlock();
+                return { name, ret, params, body };
+            }
+
+            function parseBlock() {
+                const stmts = [];
+                while (peek() && peek().v !== '}') {
+                    const s = parseStmt();
+                    if (s) stmts.push(s);
+                }
+                if (peek()) expect('}');
+                return stmts;
+            }
+
+            function parseStmt() {
+                const t = peek();
+                if (!t) return null;
+                if (t.v === '{') { next(); return { t: 'block', body: parseBlock() }; }
+                if (t.v === ';') { next(); return null; }
+
+                if (t.v === 'return') {
+                    next();
+                    let e = null;
+                    if (peek() && peek().v !== ';') e = parseExpr();
+                    if (peek() && peek().v === ';') next();
+                    return { t: 'return', e };
+                }
+                if (t.v === 'if') {
+                    next(); expect('(');
+                    const cond = parseExpr();
+                    expect(')');
+                    const then = parseStmt();
+                    let els = null;
+                    if (peek() && peek().v === 'else') { next(); els = parseStmt(); }
+                    return { t: 'if', cond, then, els };
+                }
+                if (t.v === 'while') {
+                    next(); expect('(');
+                    const cond = parseExpr();
+                    expect(')');
+                    const body = parseStmt();
+                    return { t: 'while', cond, body };
+                }
+                if (t.v === 'do') {
+                    next();
+                    const body = parseStmt();
+                    if (peek() && peek().v === 'while') {
+                        next(); expect('(');
+                        const cond = parseExpr();
+                        expect(')');
+                        if (peek() && peek().v === ';') next();
+                    }
+                    return { t: 'do', body, cond: null };
+                }
+                if (t.v === 'for') {
+                    next(); expect('(');
+                    let init = null;
+                    if (peek() && peek().v !== ';') {
+                        const save = pos;
+                        const ty = parseType();
+                        if (ty && peek() && peek().k === 'id') {
+                            const vn = next().v;
+                            let vi = null;
+                            if (peek() && peek().v === '=') { next(); vi = parseExpr(); }
+                            init = { t: 'varDecl', ty, name: vn, init: vi };
+                        } else {
+                            pos = save;
+                            init = { t: 'expr', e: parseExpr() };
+                        }
+                    }
+                    if (peek()) expect(';');
+                    let cond = null;
+                    if (peek() && peek().v !== ';') cond = parseExpr();
+                    if (peek()) expect(';');
+                    let upd = null;
+                    if (peek() && peek().v !== ')') upd = parseExpr();
+                    if (peek()) expect(')');
+                    const body = parseStmt();
+                    return { t: 'for', init, cond, upd, body };
+                }
+                if (t.v === 'break') { next(); if (peek() && peek().v === ';') next(); return { t: 'break' }; }
+                if (t.v === 'continue') { next(); if (peek() && peek().v === ';') next(); return { t: 'continue' }; }
+
+                // Variable declaration?
+                const save = pos;
+                const ty = parseType();
+                if (ty && peek() && peek().k === 'id' && !MODIFIERS.has(peek().v)) {
+                    const vname = next().v;
+                    while (peek() && peek().v === '[') {
+                        next();
+                        if (peek() && peek().v !== ']') parseExpr();
+                        if (peek()) expect(']');
+                    }
+                    if (peek() && peek().v === '=') {
+                        next();
+                        const vi = parseExpr();
+                        if (peek() && peek().v === ';') { next(); return { t: 'varDecl', ty, name: vname, init: vi }; }
+                    } else if (peek() && peek().v === ';') {
+                        next();
+                        return { t: 'varDecl', ty, name: vname, init: null };
+                    }
+                }
+                pos = save;
+
+                const e = parseExpr();
+                if (peek() && peek().v === ';') next();
+                return { t: 'expr', e };
+            }
+
+            function parseExpr() { return parseAssign(); }
+
+            function parseAssign() {
+                const left = parseTernary();
+                const t = peek();
+                if (t && t.v === '=') { next(); const right = parseAssign(); return { t: 'assign', left, right, op: null }; }
+                if (t && ['+=', '-=', '*=', '/='].includes(t.v)) { next(); const right = parseAssign(); return { t: 'assign', left, right, op: t.v[0] }; }
+                return left;
+            }
+
+            function parseTernary() {
+                const c = parseBin(0);
+                if (peek() && peek().v === '?') {
+                    next();
+                    const th = parseExpr();
+                    expect(':');
+                    const el = parseTernary();
+                    return { t: 'ternary', c, th, el };
+                }
+                return c;
+            }
+
+            const PREC = { '||': 1, '&&': 2, '|': 3, '^': 4, '&': 5, '==': 6, '!=': 6, '<': 7, '>': 7, '<=': 7, '>=': 7, '<<': 8, '>>': 8, '+': 9, '-': 9, '*': 10, '/': 10, '%': 10 };
+
+            function parseBin(minPrec) {
+                let left = parseUnary();
+                while (true) {
+                    const t = peek();
+                    if (!t || !(t.v in PREC)) break;
+                    const prec = PREC[t.v];
+                    if (prec < minPrec) break;
+                    next();
+                    const right = parseBin(prec + 1);
+                    left = { t: 'bin', op: t.v, left, right };
+                }
+                return left;
+            }
+
+            function parseUnary() {
+                const t = peek();
+                if (!t) throw new Error('Unexpected EOF in expression');
+                if (t.v === '-') { next(); return { t: 'unary', op: '-', e: parseUnary() }; }
+                if (t.v === '!') { next(); return { t: 'unary', op: '!', e: parseUnary() }; }
+                if (t.v === '~') { next(); return { t: 'unary', op: '~', e: parseUnary() }; }
+                if (t.v === '+') { next(); return parseUnary(); }
+                if (t.v === '&') { next(); return { t: 'addr', e: parseUnary() }; }
+                if (t.v === '*') { next(); return { t: 'deref', e: parseUnary() }; }
+                return parsePostfix();
+            }
+
+            function parsePostfix() {
+                let e = parsePrimary();
+                while (true) {
+                    const t = peek();
+                    if (t && t.v === '(') {
+                        next();
+                        const args = [];
+                        while (peek() && peek().v !== ')') {
+                            args.push(parseExpr());
+                            if (peek() && peek().v === ',') next();
+                        }
+                        if (peek()) expect(')');
+                        e = { t: 'call', callee: e, args };
+                    } else if (t && t.v === '[') {
+                        next();
+                        const idx = parseExpr();
+                        if (peek()) expect(']');
+                        e = { t: 'index', arr: e, idx };
+                    } else if (t && t.v === '++') { next(); e = { t: 'postfix', op: '++', e }; }
+                    else if (t && t.v === '--') { next(); e = { t: 'postfix', op: '--', e }; }
+                    else break;
+                }
+                return e;
+            }
+
+            function parsePrimary() {
+                const t = peek();
+                if (!t) throw new Error('Unexpected EOF');
+                if (t.k === 'num') {
+                    next();
+                    const v = (t.v.startsWith('0x') || t.v.startsWith('0X')) ? parseInt(t.v, 16) : parseInt(t.v, 10);
+                    return { t: 'num', v: v | 0 };
+                }
+                if (t.k === 'id') {
+                    next();
+                    if (t.v === 'true') return { t: 'num', v: 1 };
+                    if (t.v === 'false') return { t: 'num', v: 0 };
+                    if (t.v === 'NULL' || t.v === 'nullptr') return { t: 'num', v: 0 };
+                    if (t.v === 'sizeof') {
+                        expect('(');
+                        const save = pos;
+                        const ty = parseType();
+                        if (ty && peek() && peek().v === ')') { next(); return { t: 'num', v: 4 }; }
+                        pos = save;
+                        try { parseExpr(); } catch (e) {}
+                        if (peek() && peek().v === ')') next();
+                        return { t: 'num', v: 4 };
+                    }
+                    return { t: 'id', name: t.v };
+                }
+                if (t.v === '(') {
+                    next();
+                    const save = pos;
+                    const ty = parseType();
+                    if (ty && peek() && peek().v === ')') {
+                        // Could be cast OR parenthesized expr. Peek ahead: if next token starts an expression, treat as cast.
+                        next();
+                        return { t: 'cast', toType: ty, e: parseUnary() };
+                    }
+                    pos = save;
+                    const e = parseExpr();
+                    expect(')');
+                    return e;
+                }
+                throw new Error(`Unexpected token: '${t.v}'`);
+            }
+
+            // Top-level parse
+            const functions = [];
+            while (pos < tokens.length) {
+                if (peek() && peek().v === 'extern') {
+                    const save = pos;
+                    next();
+                    while (peek() && peek().v !== '{' && peek().v !== ';') next();
+                    if (peek() && peek().v === '{') {
+                        next();
+                        while (peek() && peek().v !== '}') {
+                            const before = pos;
+                            try { const f = parseFunc(); if (f) functions.push(f); }
+                            catch (e) { pos = before + 1; }
+                            if (pos === before) pos++;
+                        }
+                        if (peek()) next();
+                        continue;
+                    }
+                    pos = save;
+                }
+                const before = pos;
+                try { const f = parseFunc(); if (f) functions.push(f); }
+                catch (e) { pos = before + 1; }
+                if (pos === before) pos++;
+            }
+
+            if (functions.length === 0) throw new Error('Tidak ada fungsi yang bisa dikompilasi.');
+            return functions;
+        }
+
+        // ---------- Code Generator ----------
+        function compileFunctionBody(fn, funcMap) {
+            const ctx = {
+                fn,
+                locals: fn.params.map((p, i) => ({ name: p.name, type: p.type, idx: i })),
+                code: [],
+                labelStack: [],
+                funcMap,
+                localCount: fn.params.length
+            };
+
+            for (const s of fn.body) emitStmt(ctx, s);
+            ctx.code.push(0x0b);
+
+            // Local declaration groups
+            const groups = [];
+            const startIdx = fn.params.length;
+            for (let i = startIdx; i < ctx.locals.length; i++) {
+                const t = ctx.locals[i].type;
+                if (groups.length && groups[groups.length - 1].type === t) groups[groups.length - 1].count++;
+                else groups.push({ type: t, count: 1 });
+            }
+            const localDecls = [];
+            lebU(localDecls, groups.length);
+            for (const g of groups) { lebU(localDecls, g.count); localDecls.push(TYPE_BYTE[g.type] || 0x7f); }
+
+            return [...localDecls, ...ctx.code];
+        }
+
+        function findLocal(ctx, name) {
+            for (let i = ctx.locals.length - 1; i >= 0; i--) if (ctx.locals[i].name === name) return ctx.locals[i];
+            throw new Error(`Variabel tidak dikenal: '${name}'`);
+        }
+
+        function emitStmt(ctx, s) {
+            switch (s.t) {
+                case 'block': for (const sub of s.body) emitStmt(ctx, sub); break;
+                case 'varDecl': {
+                    const idx = ctx.locals.length;
+                    ctx.locals.push({ name: s.name, type: s.ty, idx });
+                    if (s.init) emitExpr(ctx, s.init);
+                    else { ctx.code.push(0x41); lebS(ctx.code, 0); }
+                    ctx.code.push(0x21); lebU(ctx.code, idx);
+                    break;
+                }
+                case 'return':
+                    if (s.e) emitExpr(ctx, s.e);
+                    ctx.code.push(0x0f);
+                    break;
+                case 'if': {
+                    emitExpr(ctx, s.cond);
+                    ctx.code.push(0x04); ctx.code.push(0x40);
+                    emitStmt(ctx, s.then);
+                    if (s.els) { ctx.code.push(0x05); emitStmt(ctx, s.els); }
+                    ctx.code.push(0x0b);
+                    break;
+                }
+                case 'while': {
+                    ctx.code.push(0x02, 0x40); // block
+                    ctx.code.push(0x03, 0x40); // loop
+                    const stackEntry = { breakDepth: 1, continueDepth: 0 };
+                    ctx.labelStack.push(stackEntry);
+                    emitExpr(ctx, s.cond);
+                    ctx.code.push(0x45); // i32.eqz
+                    ctx.code.push(0x0d); lebU(ctx.code, 1); // br_if break
+                    emitStmt(ctx, s.body);
+                    ctx.code.push(0x0c); lebU(ctx.code, 0); // br continue
+                    ctx.code.push(0x0b); // end loop
+                    ctx.code.push(0x0b); // end block
+                    ctx.labelStack.pop();
+                    break;
+                }
+                case 'do': {
+                    ctx.code.push(0x02, 0x40);
+                    ctx.code.push(0x03, 0x40);
+                    ctx.labelStack.push({ breakDepth: 1, continueDepth: 0 });
+                    emitStmt(ctx, s.body);
+                    if (s.cond) {
+                        emitExpr(ctx, s.cond);
+                        ctx.code.push(0x0d); lebU(ctx.code, 0); // br_if continue
+                    }
+                    ctx.code.push(0x0b, 0x0b);
+                    ctx.labelStack.pop();
+                    break;
+                }
+                case 'for': {
+                    if (s.init) {
+                        if (s.init.t === 'varDecl') emitStmt(ctx, s.init);
+                        else { if (emitExpr(ctx, s.init.e)) ctx.code.push(0x1a); }
+                    }
+                    ctx.code.push(0x02, 0x40); // block
+                    ctx.code.push(0x03, 0x40); // loop
+                    ctx.labelStack.push({ breakDepth: 1, continueDepth: 0 });
+                    if (s.cond) {
+                        emitExpr(ctx, s.cond);
+                        ctx.code.push(0x45);
+                        ctx.code.push(0x0d); lebU(ctx.code, 1);
+                    }
+                    emitStmt(ctx, s.body);
+                    if (s.upd) { if (emitExpr(ctx, s.upd)) ctx.code.push(0x1a); }
+                    ctx.code.push(0x0c); lebU(ctx.code, 0);
+                    ctx.code.push(0x0b, 0x0b);
+                    ctx.labelStack.pop();
+                    break;
+                }
+                case 'break': {
+                    if (ctx.labelStack.length === 0) throw new Error("'break' di luar loop");
+                    const depth = ctx.labelStack[ctx.labelStack.length - 1].breakDepth;
+                    ctx.code.push(0x0c); lebU(ctx.code, depth);
+                    break;
+                }
+                case 'continue': {
+                    if (ctx.labelStack.length === 0) throw new Error("'continue' di luar loop");
+                    const depth = ctx.labelStack[ctx.labelStack.length - 1].continueDepth;
+                    ctx.code.push(0x0c); lebU(ctx.code, depth);
+                    break;
+                }
+                case 'expr': if (emitExpr(ctx, s.e)) ctx.code.push(0x1a); break;
+                default: throw new Error(`Statement tidak didukung: ${s.t}`);
+            }
+        }
+
+        function emitExpr(ctx, e) {
+            switch (e.t) {
+                case 'num': ctx.code.push(0x41); lebS(ctx.code, e.v | 0); return true;
+                case 'id': {
+                    const l = findLocal(ctx, e.name);
+                    ctx.code.push(0x20); lebU(ctx.code, l.idx);
+                    return true;
+                }
+                case 'bin': {
+                    if (e.op === '&&') {
+                        emitExpr(ctx, e.left);
+                        ctx.code.push(0x04, 0x7f);
+                        emitExpr(ctx, e.right);
+                        ctx.code.push(0x45, 0x45);
+                        ctx.code.push(0x05);
+                        ctx.code.push(0x41); lebS(ctx.code, 0);
+                        ctx.code.push(0x0b);
+                        return true;
+                    }
+                    if (e.op === '||') {
+                        emitExpr(ctx, e.left);
+                        ctx.code.push(0x04, 0x7f);
+                        ctx.code.push(0x41); lebS(ctx.code, 1);
+                        ctx.code.push(0x05);
+                        emitExpr(ctx, e.right);
+                        ctx.code.push(0x45, 0x45);
+                        ctx.code.push(0x0b);
+                        return true;
+                    }
+                    emitExpr(ctx, e.left);
+                    emitExpr(ctx, e.right);
+                    ctx.code.push(BIN_OP[e.op]);
+                    return true;
+                }
+                case 'unary':
+                    if (e.op === '-') {
+                        ctx.code.push(0x41); lebS(ctx.code, 0);
+                        emitExpr(ctx, e.e);
+                        ctx.code.push(0x6b);
+                    } else if (e.op === '!') { emitExpr(ctx, e.e); ctx.code.push(0x45); }
+                    else if (e.op === '~') {
+                        emitExpr(ctx, e.e);
+                        ctx.code.push(0x41); lebS(ctx.code, -1);
+                        ctx.code.push(0x73);
+                    }
+                    return true;
+                case 'assign': return emitAssign(ctx, e);
+                case 'call': {
+                    for (const a of e.args) emitExpr(ctx, a);
+                    const fname = e.callee.name;
+                    const idx = ctx.funcMap.get(fname);
+                    if (idx === undefined) throw new Error(`Fungsi tidak dikenal: '${fname}'`);
+                    ctx.code.push(0x10); lebU(ctx.code, idx);
+                    return true;
+                }
+                case 'index': {
+                    emitExpr(ctx, e.arr);
+                    emitExpr(ctx, e.idx);
+                    ctx.code.push(0x6a); // i32.add
+                    ctx.code.push(0x2d, 0x00, 0x00); // i32.load8_u
+                    return true;
+                }
+                case 'postfix': {
+                    if (e.e.t === 'id') {
+                        const l = findLocal(ctx, e.e.name);
+                        ctx.code.push(0x20); lebU(ctx.code, l.idx); // get old
+                        ctx.code.push(0x20); lebU(ctx.code, l.idx); // get old again
+                        ctx.code.push(0x41); lebS(ctx.code, 1);
+                        ctx.code.push(e.op === '++' ? 0x6a : 0x6b);
+                        ctx.code.push(0x21); lebU(ctx.code, l.idx);
+                        return true;
+                    }
+                    throw new Error('postfix hanya untuk variabel');
+                }
+                case 'cast': emitExpr(ctx, e.e); return true;
+                case 'ternary':
+                    emitExpr(ctx, e.c);
+                    ctx.code.push(0x04, 0x7f);
+                    emitExpr(ctx, e.th);
+                    ctx.code.push(0x05);
+                    emitExpr(ctx, e.el);
+                    ctx.code.push(0x0b);
+                    return true;
+                case 'deref':
+                    emitExpr(ctx, e.e);
+                    ctx.code.push(0x28, 0x00, 0x00);
+                    return true;
+                case 'addr':
+                    if (e.e.t === 'index') {
+                        emitExpr(ctx, e.e.arr);
+                        emitExpr(ctx, e.e.idx);
+                        ctx.code.push(0x6a);
+                        return true;
+                    }
+                    throw new Error('address-of hanya didukung untuk array indexing');
+            }
+            throw new Error(`Ekspresi tidak didukung: ${e.t}`);
+        }
+
+        function emitAssign(ctx, e) {
+            if (e.left.t === 'id') {
+                const l = findLocal(ctx, e.left.name);
+                if (e.op) {
+                    ctx.code.push(0x20); lebU(ctx.code, l.idx);
+                    emitExpr(ctx, e.right);
+                    ctx.code.push(BIN_OP[e.op]);
+                } else {
+                    emitExpr(ctx, e.right);
+                }
+                ctx.code.push(0x22); lebU(ctx.code, l.idx); // local.tee
+                return true;
+            }
+            if (e.left.t === 'index') {
+                if (e.op) throw new Error('compound assign ke array belum didukung');
+                emitExpr(ctx, e.left.arr);
+                emitExpr(ctx, e.left.idx);
+                ctx.code.push(0x6a);
+                emitExpr(ctx, e.right);
+                ctx.code.push(0x3a, 0x00, 0x00); // i32.store8
+                return false;
+            }
+            throw new Error('LValue tidak didukung');
+        }
+
+        function generateWasm(functions) {
+            const funcMap = new Map();
+            functions.forEach((f, i) => funcMap.set(f.name, i));
+
+            // Collect types
+            const types = [];
+            const typeMap = new Map();
+            function getTypeIdx(params, results) {
+                const key = params.join(',') + '|' + results.join(',');
+                if (typeMap.has(key)) return typeMap.get(key);
+                types.push({ params, results });
+                const idx = types.length - 1;
+                typeMap.set(key, idx);
+                return idx;
+            }
+
+            const funcSigs = functions.map(f => {
+                const params = f.params.map(p => p.type);
+                const results = f.ret === 'void' ? [] : [f.ret];
+                return { typeIdx: getTypeIdx(params, results) };
+            });
+
+            const bodies = functions.map(f => compileFunctionBody(f, funcMap));
+
+            const bytes = [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
+
+            // Type section (1)
+            const typeSec = [];
+            lebU(typeSec, types.length);
+            for (const t of types) {
+                typeSec.push(0x60);
+                lebU(typeSec, t.params.length);
+                for (const p of t.params) typeSec.push(TYPE_BYTE[p]);
+                lebU(typeSec, t.results.length);
+                for (const r of t.results) typeSec.push(TYPE_BYTE[r]);
+            }
+            writeSection(bytes, 1, typeSec);
+
+            // Function section (3)
+            const funcSec = [];
+            lebU(funcSec, funcSigs.length);
+            for (const s of funcSigs) lebU(funcSec, s.typeIdx);
+            writeSection(bytes, 3, funcSec);
+
+            // Memory section (5) — 256 pages = 16MB
+            const memSec = [0x01, 0x00];
+            lebU(memSec, 256);
+            writeSection(bytes, 5, memSec);
+
+            // Export section (7)
+            const expSec = [];
+            const exports = [{ name: 'memory', kind: 0x02, index: 0 }];
+            functions.forEach((f, i) => exports.push({ name: f.name, kind: 0x00, index: i }));
+            lebU(expSec, exports.length);
+            for (const ex of exports) {
+                encStr(expSec, ex.name);
+                expSec.push(ex.kind);
+                lebU(expSec, ex.index);
+            }
+            writeSection(bytes, 7, expSec);
+
+            // Code section (10)
+            const codeSec = [];
+            lebU(codeSec, bodies.length);
+            for (const b of bodies) {
+                lebU(codeSec, b.length);
+                for (const x of b) codeSec.push(x);
+            }
+            writeSection(bytes, 10, codeSec);
+
+            return new Uint8Array(bytes);
+        }
+
+        function writeSection(bytes, id, content) {
+            bytes.push(id);
+            lebU(bytes, content.length);
+            for (const b of content) bytes.push(b);
+        }
+
+        function compileCppToWasm(source) {
+            const tokens = tokenize(source);
+            if (tokens.length === 0) throw new Error('Source kosong.');
+            const functions = parse(tokens);
+            return generateWasm(functions);
+        }
+
+        global.compileCppToWasm = compileCppToWasm;
+    })(window);
+
+    /* =========================================================
+       UI INTEGRATION (tampilan tidak diubah)
+       ========================================================= */
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/github_dark");
+    editor.session.setMode("ace/mode/c_cpp");
+    editor.setFontSize("14px");
+
+    const btnCompile = document.getElementById('btnCompile');
+    const btnDownload = document.getElementById('btnDownload');
+    const fileNameInput = document.getElementById('fileNameInput');
+    const terminal = document.getElementById('terminal');
+    const pwaStatus = document.getElementById('pwaStatus');
+
+    let compiledWasmBuffer = null;
+
+    function log(msg, type = 'info') {
+        const div = document.createElement('div');
+        div.className = `log-${type}`;
+        div.textContent = `> ${msg}`;
+        terminal.appendChild(div);
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // SW: coba register, kalau gagal update status dengan jujur (tidak mengubah tampilan)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => {
+                    pwaStatus.textContent = 'PWA: SW aktif';
+                    log("Service Worker aktif: Fitur Offline Siap!", "success");
+                })
+                .catch(() => {
+                    pwaStatus.textContent = 'PWA Ready';
+                    log("Info: sw.js tidak ditemukan (SW skip, app tetap jalan).", "info");
+                });
         });
+    }
+
+    // Compile handler
+    btnCompile.addEventListener('click', async () => {
+        const cppCode = editor.getValue();
+        btnCompile.disabled = true;
+        btnDownload.disabled = true;
+        compiledWasmBuffer = null;
+
+        log("Mengompilasi C++ secara lokal (built-in compiler)...", "process");
+
+        try {
+            const t0 = performance.now();
+            const wasmBytes = compileCppToWasm(cppCode);
+            const t1 = performance.now();
+            log(`Kompilasi selesai dalam ${(t1 - t0).toFixed(1)} ms`, "info");
+
+            // Validasi WASM
+            if (!WebAssembly.validate(wasmBytes)) throw new Error('Binary WASM gagal divalidasi.');
+            const module = await WebAssembly.compile(wasmBytes);
+            log("Binary WASM valid & siap digunakan!", "success");
+
+            // Tampilkan daftar export
+            const exportNames = WebAssembly.Module.exports(module).map(e => e.name).join(', ');
+            log(`Exports: ${exportNames}`, "info");
+            log(`Ukuran File: ${(wasmBytes.byteLength / 1024).toFixed(2)} KB`, "info");
+
+            compiledWasmBuffer = wasmBytes.buffer.slice(wasmBytes.byteOffset, wasmBytes.byteOffset + wasmBytes.byteLength);
+            btnDownload.disabled = false;
+        } catch (err) {
+            log(`Kompilasi GAGAL: ${err.message}`, "error");
+            log("Tips: hanya subset C/C++ sederhana yang didukung (int/void, if/for/while, array).", "info");
+        } finally {
+            btnCompile.disabled = false;
+        }
+    });
+
+    // Download handler
+    btnDownload.addEventListener('click', () => {
+        if (!compiledWasmBuffer) return;
+        let customName = fileNameInput.value.trim() || 'module_engine';
+        customName = customName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+        const blob = new Blob([compiledWasmBuffer], { type: "application/wasm" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${customName}.wasm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        log(`Berkas berhasil disimpan: ${customName}.wasm`, "success");
+    });
     </script>
 </body>
-                                                          </html>
+</html>
