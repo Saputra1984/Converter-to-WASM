@@ -884,36 +884,112 @@ extern "C" {
     // Compile handler
     btnCompile.addEventListener('click', async () => {
         const cppCode = editor.getValue();
+    
         btnCompile.disabled = true;
         btnDownload.disabled = true;
         compiledWasmBuffer = null;
-
-        log("Mengompilasi C++ secara lokal (built-in compiler)...", "process");
-
-        try {
-            const t0 = performance.now();
-            const wasmBytes = compileCppToWasm(cppCode);
-            const t1 = performance.now();
-            log(`Kompilasi selesai dalam ${(t1 - t0).toFixed(1)} ms`, "info");
-
-            // Validasi WASM
-            if (!WebAssembly.validate(wasmBytes)) throw new Error('Binary WASM gagal divalidasi.');
-            const module = await WebAssembly.compile(wasmBytes);
-            log("Binary WASM valid & siap digunakan!", "success");
-
-            // Tampilkan daftar export
-            const exportNames = WebAssembly.Module.exports(module).map(e => e.name).join(', ');
-            log(`Exports: ${exportNames}`, "info");
-            log(`Ukuran File: ${(wasmBytes.byteLength / 1024).toFixed(2)} KB`, "info");
-
-            compiledWasmBuffer = wasmBytes.buffer.slice(wasmBytes.byteOffset, wasmBytes.byteOffset + wasmBytes.byteLength);
-            btnDownload.disabled = false;
-        } catch (err) {
-            log(`Kompilasi GAGAL: ${err.message}`, "error");
-            log("Tips: hanya subset C/C++ sederhana yang didukung (int/void, if/for/while, array).", "info");
-        } finally {
-            btnCompile.disabled = false;
+    
+        log("Mengirim kode ke server kompilasi jarak jauh...", "process");
+    
+        // 1. Daftar proxy publik untuk dicoba (fallback otomatis)
+        const WORKER_URL = "https://wasm-forge-proxy.syafutra84.workers.dev";
+        
+        const proxies = [
+            { name: "cloudflare-worker", prefix: WORKER_URL + "/?url=" },
+            { name: "corsproxy.io", prefix: "https://corsproxy.io/?url=" },
+            { name: "allorigins", prefix: "https://api.allorigins.win/raw?url=" }
+        ];
+    
+        // 2. Endpoint API Godbolt yang akan dipanggil
+        const godboltEndpoint = "https://godbolt.org/api/compiler/clang/compile";
+    
+        // 3. Payload JSON untuk dikirim ke Godbolt
+        //    Parameter 'userArguments' sangat penting untuk menghasilkan WASM
+        const payload = {
+            source: cppCode,
+            userArguments: "--target=wasm32 -O2 -nostdlib -Wl,--no-entry -Wl,--export-all",
+            filters: {
+                binary: true // Meminta output dalam format biner
+            },
+            options: {
+                compilerOptions: {
+                    executorRequest: false // Kita tidak perlu mengeksekusi hasilnya
+                }
+            }
+        };
+    
+        let lastError = null;
+    
+        // 4. Coba setiap proxy secara berurutan
+        for (const proxy of proxies) {
+            const targetUrl = proxy.prefix + encodeURIComponent(godboltEndpoint);
+            log(`Mencoba melalui ${proxy.name}...`, "info");
+    
+            try {
+                const response = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+    
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+    
+                const result = await response.json();
+    
+                // 5. Cek apakah kompilasi berhasil (kode 0 = sukses)
+                if (result.code !== 0) {
+                    // Kumpulkan pesan error dari compiler
+                    const errorMsg = result.stderr
+                        ? result.stderr.map(e => e.text).join('\n')
+                        : 'Kompilasi gagal tanpa pesan error.';
+                    throw new Error(errorMsg);
+                }
+    
+                // 6. Ekstrak data biner WASM dari respons
+                //    Godbolt mengembalikan output biner dalam field 'asm' sebagai array byte
+                if (!result.asm || !Array.isArray(result.asm)) {
+                    throw new Error('Respons tidak berisi data biner WASM.');
+                }
+    
+                // Konversi array angka (byte) menjadi Uint8Array
+                const wasmBytes = new Uint8Array(result.asm);
+    
+                // 7. Validasi bahwa ini memang file WASM yang valid
+                if (!WebAssembly.validate(wasmBytes)) {
+                    throw new Error('Data yang diterima bukan file WASM yang valid.');
+                }
+    
+                // 8. Sukses!
+                compiledWasmBuffer = wasmBytes.buffer;
+    
+                // Tampilkan daftar fungsi yang di-export
+                const module = await WebAssembly.compile(wasmBytes);
+                const exportNames = WebAssembly.Module.exports(module)
+                    .map(e => e.name)
+                    .join(', ');
+    
+                log(`Kompilasi sukses via ${proxy.name}!`, "success");
+                log(`Exports: ${exportNames}`, "info");
+                log(`Ukuran File: ${(wasmBytes.byteLength / 1024).toFixed(2)} KB`, "info");
+    
+                btnDownload.disabled = false;
+                return; // Keluar dari loop karena sudah berhasil
+    
+            } catch (err) {
+                lastError = err;
+                log(`Gagal via ${proxy.name}: ${err.message}`, "error");
+                // Lanjut ke proxy berikutnya
+            }
         }
+    
+        // Jika semua proxy gagal
+        log(`Semua server kompilasi gagal dihubungi.`, "error");
+        log(`Error terakhir: ${lastError.message}`, "error");
+        log(`Tips: Pastikan koneksi internet stabil, atau coba lagi nanti.`, "info");
+    
+        btnCompile.disabled = false;
     });
 
     // Download handler
