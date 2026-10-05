@@ -1008,6 +1008,45 @@ extern "C" {
         URL.revokeObjectURL(url);
         log(`Berkas berhasil disimpan: ${customName}.wasm`, "success");
     });
+
+    // ------- AUTO UPDATE SERVICE WORKER -------
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        // Cek update setiap kali halaman dibuka
+        reg.update().catch(() => {});
+    
+        // Kalau ada SW baru ditemukan, langsung aktifkan
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+    
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              log("Versi baru ditemukan. Memuat ulang...", "process");
+              // Aktifkan SW baru
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              // Muat ulang halaman setelah SW aktif
+              setTimeout(() => window.location.reload(), 500);
+            }
+          });
+        });
+      });
+    
+      // Kalau SW lama diganti SW baru, reload otomatis
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    
+      // Terima pesan dari SW
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_UPDATED') {
+          log(`Service Worker diperbarui ke ${event.data.version}`, "success");
+        }
+      });
+    }
     </script>
 </body>
 </html>
