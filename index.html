@@ -907,14 +907,22 @@ extern "C" {
         //    Parameter 'userArguments' sangat penting untuk menghasilkan WASM
         const payload = {
             source: cppCode,
-            userArguments: "--target=wasm32 -O2 -nostdlib -Wl,--no-entry -Wl,--export-all",
-            filters: {
-                binary: true // Meminta output dalam format biner
-            },
             options: {
+                userArguments: "--target=wasm32 -O2 -nostdlib -Wl,--no-entry -Wl,--export-all",
                 compilerOptions: {
-                    executorRequest: false // Kita tidak perlu mengeksekusi hasilnya
-                }
+                    executorRequest: false
+                },
+                filters: {
+                    binary: true,
+                    execute: false,
+                    intel: true,
+                    demangle: true,
+                    directives: true,
+                    commentOnly: true,
+                    trim: false
+                },
+                tools: [],
+                libraries: []
             }
         };
     
