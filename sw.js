@@ -1,6 +1,6 @@
 // Naikkan angka versi ini SETIAP KALI Anda update index.html
 // SW lama akan otomatis dibuang, SW baru ambil alih.
-const CACHE_VERSION = 'v4'; // ← UBAH KE v3, v4, dst. setiap update
+const CACHE_VERSION = 'v1'; // ← UBAH KE v3, v4, dst. setiap update
 const CACHE_NAME = `wasm-forge-${CACHE_VERSION}`;
 
 // Asset lokal yang WAJIB ada (kalau salah satu tidak ada → SW gagal install)
