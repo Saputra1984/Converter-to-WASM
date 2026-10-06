@@ -889,95 +889,51 @@ extern "C" {
         btnDownload.disabled = true;
         compiledWasmBuffer = null;
     
-        log("Mengirim kode ke server kompilasi jarak jauh...", "process");
+        log("Mengirim kode ke server kompilasi lokal (Termux)...", "process");
     
-        // 1. Daftar proxy publik untuk dicoba (fallback otomatis)
-        const WORKER_URL = "https://wasm-forge-proxy.syafutra84.workers.dev";
-        
-        const proxies = [
-            { name: "cloudflare-worker", prefix: WORKER_URL + "/?url=" },
-            { name: "corsproxy.io", prefix: "https://corsproxy.io/?url=" },
-            { name: "allorigins", prefix: "https://api.allorigins.win/raw?url=" }
-        ];
+        try {
+            const response = await fetch('http://localhost:8080/compile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: cppCode })
+            });
     
-        // 2. Endpoint API Godbolt yang akan dipanggil
-        const godboltEndpoint = "https://godbolt.org/api/compiler/clang/compile";
-    
-        // 3. Payload JSON untuk dikirim ke Godbolt
-        //    Parameter 'userArguments' sangat penting untuk menghasilkan WASM
-        const payload = {
-            source: cppCode,
-            options: {
-                userArguments: "--target=wasm32 -O2 -nostdlib -Wl,--no-entry -Wl,--export-all",
-                compilerOptions: {
-                    executorRequest: false
-                },
-                filters: {
-                    binary: true,
-                    execute: false,
-                    intel: true,
-                    demangle: true,
-                    directives: true,
-                    commentOnly: true,
-                    trim: false
-                },
-                tools: [],
-                libraries: []
-            }
-        };
-    
-        let lastError = null;
-    
-        // 4. Coba setiap proxy secara berurutan
-        for (const proxy of proxies) {
-            const targetUrl = proxy.prefix + encodeURIComponent(godboltEndpoint);
-            log(`Mencoba melalui ${proxy.name}...`, "info");
-    
-            try {
-                const response = await fetch('http://localhost:8080/compile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: cppCode })
-                });
-                
-                if (!response.ok) {
-                    // Jika server mengirim error (status 4xx atau 5xx)
+            if (!response.ok) {
+                let errorMsg = `HTTP ${response.status} ${response.statusText}`;
+                try {
                     const errorData = await response.json();
-                    log(`Kompilasi GAGAL: ${errorData.error}`, "error");
-                    throw new Error(errorData.error); // Lempar error untuk ditangkap blok catch
-                }
-                
-                // Jika sukses, respons adalah file .wasm
-                const wasmBytes = new Uint8Array(await response.arrayBuffer());
-                
-                // Lakukan validasi dan tampilkan info seperti biasa
-                if (!WebAssembly.validate(wasmBytes)) {
-                    throw new Error('Data yang diterima bukan file WASM yang valid.');
-                }
-                
-                compiledWasmBuffer = wasmBytes.buffer;
-                const module = await WebAssembly.compile(wasmBytes);
-                const exportNames = WebAssembly.Module.exports(module).map(e => e.name).join(', ');
-                
-                log(`Kompilasi sukses!`, "success");
-                log(`Exports: ${exportNames}`, "info");
-                log(`Ukuran File: ${(wasmBytes.byteLength / 1024).toFixed(2)} KB`, "info");
-                btnDownload.disabled = false;
-                return; // Keluar dari loop karena sudah berhasil
-    
-            } catch (err) {
-                lastError = err;
-                log(`Gagal via ${proxy.name}: ${err.message}`, "error");
-                // Lanjut ke proxy berikutnya
+                    errorMsg = errorData.error || errorMsg;
+                } catch (e) { /* respons bukan JSON */ }
+                log(`Kompilasi GAGAL: ${errorMsg}`, "error");
+                return;
             }
+    
+            const wasmBytes = new Uint8Array(await response.arrayBuffer());
+    
+            if (!WebAssembly.validate(wasmBytes)) {
+                log('Data yang diterima bukan file WASM yang valid.', "error");
+                return;
+            }
+    
+            compiledWasmBuffer = wasmBytes.buffer;
+    
+            const module = await WebAssembly.compile(wasmBytes);
+            const exportNames = WebAssembly.Module.exports(module)
+                .map(e => e.name)
+                .join(', ');
+    
+            log(`Kompilasi sukses!`, "success");
+            log(`Exports: ${exportNames}`, "info");
+            log(`Ukuran File: ${(wasmBytes.byteLength / 1024).toFixed(2)} KB`, "info");
+    
+            btnDownload.disabled = false;
+    
+        } catch (err) {
+            log(`Gagal menghubungi server: ${err.message}`, "error");
+            log(`Tips: Pastikan Termux terbuka & server jalan di localhost:8080`, "info");
+        } finally {
+            btnCompile.disabled = false;
         }
-    
-        // Jika semua proxy gagal
-        log(`Semua server kompilasi gagal dihubungi.`, "error");
-        log(`Error terakhir: ${lastError.message}`, "error");
-        log(`Tips: Pastikan koneksi internet stabil, atau coba lagi nanti.`, "info");
-    
-        btnCompile.disabled = false;
     });
 
     // Download handler
