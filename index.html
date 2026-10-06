@@ -934,54 +934,34 @@ extern "C" {
             log(`Mencoba melalui ${proxy.name}...`, "info");
     
             try {
-                const response = await fetch(targetUrl, {
+                const response = await fetch('http://localhost:8080/compile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ code: cppCode })
                 });
-    
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    // Jika server mengirim error (status 4xx atau 5xx)
+                    const errorData = await response.json();
+                    log(`Kompilasi GAGAL: ${errorData.error}`, "error");
+                    throw new Error(errorData.error); // Lempar error untuk ditangkap blok catch
                 }
-    
-                const result = await response.json();
-    
-                // 5. Cek apakah kompilasi berhasil (kode 0 = sukses)
-                if (result.code !== 0) {
-                    // Kumpulkan pesan error dari compiler
-                    const errorMsg = result.stderr
-                        ? result.stderr.map(e => e.text).join('\n')
-                        : 'Kompilasi gagal tanpa pesan error.';
-                    throw new Error(errorMsg);
-                }
-    
-                // 6. Ekstrak data biner WASM dari respons
-                //    Godbolt mengembalikan output biner dalam field 'asm' sebagai array byte
-                if (!result.asm || !Array.isArray(result.asm)) {
-                    throw new Error('Respons tidak berisi data biner WASM.');
-                }
-    
-                // Konversi array angka (byte) menjadi Uint8Array
-                const wasmBytes = new Uint8Array(result.asm);
-    
-                // 7. Validasi bahwa ini memang file WASM yang valid
+                
+                // Jika sukses, respons adalah file .wasm
+                const wasmBytes = new Uint8Array(await response.arrayBuffer());
+                
+                // Lakukan validasi dan tampilkan info seperti biasa
                 if (!WebAssembly.validate(wasmBytes)) {
                     throw new Error('Data yang diterima bukan file WASM yang valid.');
                 }
-    
-                // 8. Sukses!
+                
                 compiledWasmBuffer = wasmBytes.buffer;
-    
-                // Tampilkan daftar fungsi yang di-export
                 const module = await WebAssembly.compile(wasmBytes);
-                const exportNames = WebAssembly.Module.exports(module)
-                    .map(e => e.name)
-                    .join(', ');
-    
-                log(`Kompilasi sukses via ${proxy.name}!`, "success");
+                const exportNames = WebAssembly.Module.exports(module).map(e => e.name).join(', ');
+                
+                log(`Kompilasi sukses!`, "success");
                 log(`Exports: ${exportNames}`, "info");
                 log(`Ukuran File: ${(wasmBytes.byteLength / 1024).toFixed(2)} KB`, "info");
-    
                 btnDownload.disabled = false;
                 return; // Keluar dari loop karena sudah berhasil
     
